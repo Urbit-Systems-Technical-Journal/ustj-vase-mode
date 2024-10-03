@@ -4,9 +4,9 @@
 
 \addbibresource{mss.bib}
 
-\newcommand{\authorname}{Ernest P. Worrell}
-\newcommand{\authorpatp}{\patp{sampel-palnet}}
-\newcommand{\affiliation}{Kamp Kikakee}
+\newcommand{\authorname}{N. E. Davis}
+\newcommand{\authorpatp}{\patp{lagrev-nocfep}}
+\newcommand{\affiliation}{Urbit Foundation}
 
 %  Make first page footer:
 \fancypagestyle{firststyle}{%
@@ -27,7 +27,7 @@
 \fancyfoot[LE,RO]{\thepage}
 
 %%MANUSCRIPT
-\title{Ernest Goes to Mars:  An Enquiry into the Foundations of Artificial Stupidity}
+\title{Notes on Vase Mode}
 \author{\authorname~\authorpatp \\ \affiliation}
 \date{}
 
@@ -37,7 +37,6 @@
 \thispagestyle{firststyle}
 
 \begin{abstract}
-In this groundbreaking paper, we embark on a cosmic journey with the renowned character Ernest P. Worrell as he ventures into the unexplored realm of Martian computing. Drawing inspiration from Ernest's comically ingenious encounters with everyday challenges, we investigate the foundations of what we term "Artificial Stupidity." As Ernest grapples with Martian technology, we delve into the intricacies of programming errors, algorithmic missteps, and the curious phenomena that arise when human-like intelligence meets extraterrestrial computing systems. Our analysis sheds light on the unexpected intersections between humor, artificial intelligence, and the cosmic absurdity of Martian software. Join us in this interplanetary exploration as we unravel the mysteries of Artificial Stupidity through the lens of Ernest's interstellar escapades.
 \end{abstract}
 
 % We will adjust page numbering in final editing.
@@ -48,60 +47,164 @@ In this groundbreaking paper, we embark on a cosmic journey with the renowned ch
 
 \section{Introduction}
 
-Introduce the scope of your article and investigation.
+The Hoon programming language serves as the primary systems language for the Urbit OS, Arvo.  In some ways like a macro over Nock, Hoon introduces static typing (thus extending from Nock's sole use of integers) and other design patterns convenient to programmers.  Most of the time, developers work in “static Hoon”, which maintains guard rails and is easier to reason about.  However, a more flexible and powerful modality is available.  Most commonly used in building code and in manipulating vanes, “vase mode” permits the developer to edit the type and the value directly.
 
-\section{Background and Literature}
+\section{Hoon Compilation in a Nutshell}
 
-Exposite the relevant background and literature.
+Before we can really grasp the utility of vase mode, we require a brief diversion into how Hoon code is actually compiled and built into Nock.  That is, given a Hoon expression, how do we get it into a form that can be executed by the Nock virtual machine?  A number of convenience functions wrap various parts of the Hoon compiler, which primarily consists of \lstinline[style=inlinecode]{++vast} and \lstinline[style=inlinecode]{++ut}.
 
-\begin{enumerate}
-  \item  Prefer to \texttt{enumerate}.
-  \item  It is easier to refer to than \texttt{itemize}.
-\end{enumerate}
+\paragraph{Text→Nock}.  To evaluate a string containing Hoon directly, one merely needs to \lstinline[style=inlinecode]{++make} the \lstinline[style=inlinecode]{cord} (text atom).\footnote{Note that Nock instructions are marked as constants with \texttt{\%} for legibility, but are simply the associated integer.}
 
-\noindent
-Mark \texttt{\textbackslash noindent} in paragraphs that continue the thought of an \texttt{\textbackslash enumerate} block.
+\begin{lstlisting}[style=listingcode]
+> (make '~[1 2 3]')
+[%1 p=[1 2 3 0]]
 
-\section{Urbit's Implementation}
-
-Oftentimes you will then turn to exploring how Urbit or closely related systems like Nockchain have approached or considered a problem.  You can look at a PR like \citetpr{urbit_urbit_6891}.
-
-\lstset{language=C}
-\begin{lstlisting}
-#include <stdio.h>
-
-double compute(float a, float b) {
-    return a * a + b * b;
-}
-
-int main() {
-    float x = 2.5;
-    float y = 3.7;
-
-    double result = compute(x, y);
-
-    printf("Result: %lf\n", result);
-
-    return 0;
-}
+> (make '=+(a=5 -)')
+[%8 p=[%1 p=5] q=[%0 p=2]]
 \end{lstlisting}
 
 \noindent
-That code snippet was part of the text, and not a standalone entity to which we make separate repeated reference.
+Since \lstinline[style=inlinecode]{++make} assumes no subject, all information must be provided in the expression.  Furthermore, although not present explicitly, \lstinline[style=inlinecode]{++make} utilizes an internal \lstinline[style=inlinecode]{+$type} of \lstinline[style=inlinecode]{%noun}.
 
-\begin{figure}
-  \begin{lstlisting}[language=Python, caption={Example Python Code}, label={lst:example}]
-  def hello_world():
-      print("Hello, world!")
-  \end{lstlisting}
-\end{figure}
+\begin{lstlisting}[style=listingcode]
+> (make '-')
+[%0 p=2]
 
-Refer to the code listing: Listing~\ref{lst:example}.  (Note that we don't suppress indentation since it's a float.)
+> .*([1 2] (make '-'))
+1
+\end{lstlisting}
+
+\paragraph{Text→AST→Nock}.  The simplified high-level lifecycle of Hoon code sees it go from text to an abstract syntax tree (\textsc{ast}) and thence to executable Nock.\footnote{In practice, the text is commonly derived from a file via the \lstinline[style=inlinecode]{%hoon} mark.}
+
+To convert Hoon text from a \lstinline[style=inlinecode]{cord} to an \textsc{ast}, use \lstinline[style=inlinecode]{++ream}.  The \textsc{ast} is a tree of Hoon expressions marked by rune and components such as wings (lookup names in the subject) and atoms or cells.
+
+\begin{lstlisting}[style=listingcode]
+> (ream '(add 1 2)')
+[%cncl p=[%wing p=~[%add]] q=~[[%sand p=%ud q=1] [%sand p=%ud q=2]]]
+
+> (ream '-:!>(5)')  
+[%tsgl p=[%cnts p=~[[%.y p=2]] q=~] q=[%zpgr p=[%sand p=%ud q=5]]]
+\end{lstlisting}
+
+\noindent
+A Hoon \textsc{ast} is properly a \lstinline[style=inlinecode]{+$hoon}, which is a complicated type union over all of the kinds of things that Hoon knows something to be able to be.\footnote{The relevant code may be found in \lstinline[style=inlinecode]{/sys/hoon}.}  Sugar runes can be represented simply or reparsed by \lstinline[style=inlinecode]{++open:ap} into a more fundamental form.  However, at this point no desugaring has taken place; equivalent forms may still have different AST representations as \lstinline[style=inlinecode]{+$hoon}:
+
+\begin{lstlisting}[style=listingcode]
+> (ream '~[1 2 3]')
+[%clsg p=~[[%sand p=%ud q=1] [%sand p=%ud q=2] [%sand p=%ud q=3]]]
+
+> (ream '[1 2 3 ~]')
+[%cltr p=~[[%sand p=%ud q=1] [%sand p=%ud q=2] [%sand p=%ud q=3] [%bust p=%null]]]
+\end{lstlisting}
+
+\noindent
+Hoon supplements “pure” values with metadata to establish context for the values and enforce its notion of type.
+
+Given a reduced Hoon \textsc{ast}, \lstinline[style=inlinecode]{++mint:ut} function compiles it into Nock code.  \lstinline[style=inlinecode]{++mint:ut} parses from a Hoon \textsc{ast} into a pair of the type and the Nock.\footnote{One simple approach to understand this part of the Hoon compiler backend is to look at \href{https://github.com/urbit/archaeology/blob/6b2ce202207b9bb3f4e65fc1ea9a2fb434396dd4/urb/zod/arvo/hoon.hoon#L7698}{the 2013 Hoon compiler}, which presents a relatively uncluttered version.}
+
+\begin{lstlisting}[style=listingcode]
+> (~(mint ut %noun) %noun (ream '~[1 2 3]'))
+[#t/[@ud @ud @ud %~] q=[%1 p=[1 2 3 0]]]
+\end{lstlisting}
+
+\noindent
+While there is much to say about \lstinline[style=inlinecode]{++mint}, for our purposes we simply note that it operates on each tag in an \textsc{ast} to convert it recursively to \lstinline[style=inlinecode]{+$nock}.\footnote{Nock code is not executed simply in either of the primary runtimes, Vere or Sword (née Ares).  Instead it is converted into a bytecode for execution.}
+
+\section{Vases}
+
+A \lstinline[style=inlinecode]{+$vase} is simply a pair of \lstinline[style=inlinecode]{+$type} and value, where \lstinline[style=inlinecode]{+$type} defines the Hoon type set and the tail contains the actual data.  (Vases could be treated more generally than simply Hoon types, but in practice are used only with Hoon, so the type data structure will become relevant.)
 
 
-\section{A Wild Ernest Appears}
+Hoon's type information captures both the set of nouns valid for a particular piece of data and the subject, or environment to which the value has access.  For instance, a \lstinline[style=inlinecode]{%face} is a lookup index into the subject for a value with an associated name.
 
-You can have as many sections as make sense.  Only sections and subsections appear in the table of contents.
+Vases are frequently used to compile and execute Hoon code, but are also used to store typed data.  Since Nock is ultimately homoiconic, any arbitrary noun may be either executable code or static data.  A vase preserves the type information associated with the noun, making it possible to reconstruct it in regular (static) Hoon.  For instance, as a security mechanism, “live code” is never transmitted over the wire between machines.  Instead, the type and value are sent, and the recipient compiles the noun into executable code.
+
+\subsection{Hoon Type}
+
+\emph{This section may be skipped in favor of applied vase algebra on a first reading.}
+
+The formal s of \lstinline[style=inlinecode]{+$vase} and \lstinline[style=inlinecode]{+$type} are as follows:
+
+\begin{lstlisting}[style=listingcode]
+  +$  vase  [p=type q=*]
+  +$  type  $~  %noun
+            $@  $?  %noun
+                    %void
+                ==
+            $%  [%atom p=term q=(unit @)]
+                [%cell p=type q=type]
+                [%core p=type q=coil]
+                [%face p=$@(term tune) q=type]
+                [%fork p=(set type)]
+                [%hint p=(pair type note) q=type]
+                [%hold p=type q=hoon]
+            ==
+\end{lstlisting}
+
+\begin{itemize}
+  \item  \lstinline[style=inlinecode]{%noun} is the superset of all nouns.
+  \item  \lstinline[style=inlinecode]{%void} is the empty noun, but won't occur in practice.
+  \item  \lstinline[style=inlinecode]{%atom} spans the set of all atoms.
+  \item  \lstinline[style=inlinecode]{%cell} contains ordered pairs.
+\end{itemize}
+
+\noindent
+The other types are more complex:
+
+\begin{itemize}
+  \item  \lstinline[style=inlinecode]{%core} is the descriptor type for a core.  Besides the \lstinline[style=inlinecode]{+$type}, it uses a \lstinline[style=inlinecode]{+$coil}, which is a tuple of variance information, context, and chapters (limbs).
+  \item  \lstinline[style=inlinecode]{%face} spans the same set as nouns but includes a face.
+  \item  \lstinline[style=inlinecode]{%fork} is a union, or choice over options.
+  \item  \lstinline[style=inlinecode]{%hint} is an annotation for the compiler (Nock Eleven).
+  \item  \lstinline[style=inlinecode]{%hold} types are lazily evaluated, such as a recursive type (like the \lstinline[style=inlinecode]{++list} mold builder).
+  \begin{itemize}
+    \item  \lstinline[style=inlinecode]{%hold} types are why the compiler can have trouble with lists at runtime, such as needing to distinguish a \lstinline[style=inlinecode]{lest} or the TMI problem with \lstinline[style=inlinecode]{++snag} \&c.
+    \item  A \lstinline[style=inlinecode]{%hold} type is a “finite subtype” of an infinite type.  Hoon doesn't actually know about these directly, just in that it can be lazy about evaluating recursions.
+    \item  They result from arms in cores because the \lstinline[style=inlinecode]{hoon} of the arm is played against the core type as the subject type to get the result.  This permits polymorphism, since the core can be modified to have a sample of a different type.
+  \end{itemize}
+\end{itemize}
+
+\noindent
+\begin{quote}
+One can “evaluate” a hold by asking the compiler to “play” the hoon against the subject type, meaning to infer what type of value would result from running that hoon against a value of the subject type. For a recursive type, this result type refers to the same hold, usually in one or more of the cases of a \lstinline[style=inlinecode]{%fork}.  (\patp{rovnys-ricfer}, personal communication)
+\end{quote}
+
+For instance, let's evaluate a value of the type \lstinline[style=inlinecode]{(list @ud)}:
+
+\begin{lstlisting}[style=listingcode]
+> =a `(list @ud)`~[1 2 3]
+
+> !>(a)
+[#t/it(@ud) q=[1 2 3 0]]
+
+> -<:!>(a)
+%hold
+
+> -<:!>(?~(a 0 a))  
+%fork
+
+> ->-:!>(?~(a 0 a))  
+#t/@ud
+[%atom p=%ud q=~]
+
+> ->+<:!>(?~(a 0 a))  
+l=[#t/[i=@ud t=it(@ud)] l=~ r=~]
+\end{lstlisting}
+
+\subsection{Building Vases}
+
+\subsection{Eliminating Vases}
+
+
+
+\section[Vase Algebra]{Vase Algebra}\footnote{This section benefitted greatly from discussions with \patp{rovnys-ricfer}.}
+
+
+
+
+\section{Applications of Vase Mode}
+
+
 
 \section{Conclusion}
 
