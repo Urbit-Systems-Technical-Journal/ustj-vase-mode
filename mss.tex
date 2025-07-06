@@ -52,7 +52,8 @@ Nock is homoiconic and only recognizes natural numbers, ``atoms'' (nonnegative i
 
 The Hoon programming language solves this by using a pair of a type description and a noun, or raw Nock value.  In some ways like a macro over Nock, Hoon introduces static typing (thus extending from Nock's exclusive use of natural numbers) and other design patterns convenient to programmers.\footnote{The Jock language does not directly expose vases for utilization, but does utilize them inside the compiler, written in Hoon.}  Most of the time, developers work in “static Hoon”, which maintains guard rails and is easier to reason about.  However, a more flexible and powerful modality is available.  The type description, or type of the subject, contains information like variable names, variable types, aliases, and the overall structure of the execution environment.  Essentially, it acts as a strictly defined metadata reference set for the associated Nock value and its execution environment.  We call such a pair of type and value a “vase”.\footnote{Different interpreters and compilers call this pair different things.  For instance, CPython calls this a “boxed value” and keeps the value as a pair of datum and type tag.}  Most commonly used in building code and in manipulating vanes, vases permit the developer to edit the type and the value directly.  Essentially, a value can be lifted from a static Hoon context into a dynamic vase context, then reduced back to static Hoon or untyped Nock.
 
-Vase mode, then, describes a design pattern for lifting statically-typed values from their normal compile-time world into a dynamically-typed operating environment, which is then used to produced valid and validated Nock \textsc{isa} code while enforcing the Hoon language type constraints.  Vase mode is used in building compilers, interpreters, and code imports.  Since code is transmitted as a noun value to be built and executed on the receiver's side, this also affects hotloading code and system upgrades.  A vase algebra describes how to combine the type subject information and the associated value information, as in an import or a \textsc{repl}.  This lets Hoon have human-legible affordances in type and validation, while retaining a simple target \textsc{isa} for execution, code proving, and optimized execution.
+\sloppy
+Vase mode, then, describes a design pattern for lifting statically-typed values from their normal compile-time world into a dynamically-typed operating environment, which is then used to produced valid and validated Nock \textsc{isa} code while enforcing the Hoon language type constraints.  Vase mode is used in building compilers, interpreters, and code imports.  Since code is transmitted as a noun value to be built and executed on the receiver's side, this also affects hotloading code and system upgrades.  A vase algebra describes how to combine the type subject information and the associated value information, as in an import or a \textsc{repl}.  This lets Hoon have human-legible affordances in type and validation, while retaining a simple target \textsc{isa} for execution, code proving, and optimized execution.\footnote{A vase visualization tool has been produced by \patp{migrev-dolseg}, available at \url{https://hawk.computer}.}
 
 \section{Hoon Compilation in a Nutshell}
 
@@ -85,10 +86,12 @@ To convert Hoon text from a \lstinline[style=inlinecode]{cord} to an \textsc{ast
 
 \begin{lstlisting}[style=listingcode]
 > (ream '(add 1 2)')
-[%cncl p=[%wing p=~[%add]] q=~[[%sand p=%ud q=1] [%sand p=%ud q=2]]]
+[%cncl p=[%wing p=~[%add]] q=~[[%sand p=%ud q=1]
+                               [%sand p=%ud q=2]]]
 
 > (ream '-:!>(5)')
-[%tsgl p=[%cnts p=~[[%.y p=2]] q=~] q=[%zpgr p=[%sand p=%ud q=5]]]
+[%tsgl p=[%cnts p=~[[%.y p=2]] q=~]
+                q=[%zpgr p=[%sand p=%ud q=5]]]
 \end{lstlisting}
 
 \noindent
@@ -494,7 +497,7 @@ Hoon used to directly expose many of the mechanics of this when file handles cou
 
 \subsection{Comparisons}
 
-Type and data pairs---as in vase mode---is a general and generalizable approach.  Languages and compilers must, after all, track typed values in some way.  Another interesting question is to think about targeting other \textsc{isa}s.  No part of the vase algebra is specific to Nock except its instantiation as nouns.
+Pairing type and data is a general and generalizable approach.  Languages and compilers must, after all, track typed values in some way.  How do other languages and systems handle this?
 
 \subsubsection{Python/CPython}
 
@@ -532,7 +535,7 @@ This is very similar to the way that Hoon lets you directly construct and manipu
 (eval '(+ 1 2))  ; => 3
 \end{lstlisting}
 
-This is basically equivalent to Hoon's \lstinline[style=inlinecode]{+ream}, altho the Hoon \textsc{ast} is somewhat more regularized and opaque.  (I can actually do this without a text string, but the syntax is a bit convoluted and I don't want to muddy the waters any more in this short talk.)
+This is basically equivalent to Hoon's \lstinline[style=inlinecode]{+ream}, although the Hoon \textsc{ast} is somewhat more regularized and opaque.  (I can actually do this without a text string, but the syntax is a bit convoluted and I don't want to muddy the waters any more in this short talk.)
 
 \begin{lstlisting}[style=listingcode]
 > (ream '(add 1 2)')
@@ -572,9 +575,11 @@ An untyped VM design can be much more minimalistic. It has to enforce a small se
 \noindent
 Nock runtimes do indeed hew to this parsimony, but vases are freqently used particularly in interprocess communication in today's Urbit kernelspace and userspace.  It is unclear how they could profitably be excised from the system given their global utility.
 
+A final interesting question is to think about targeting other \textsc{isa}s.  While Hoon itself is closely tied to Nock, no part of the vase algebra (in the abstract) is specific to Nock except its instantiation as nouns.
+
 \section{Conclusion}
 
-Vase mode provides something like a gradual (un)typing pipe\-line:  one proceeds from a static Hoon context, to a dynamic vase mode, to untyped Nock.  A vase algebra describes how to combine the type subject information and the associated value information, as in an import or a \textsc{repl}.  This lets Hoon have human-legible affordances in metaprogramming and validation, while retaining a simple target \textsc{isa} for execution, code proving, and optimized execution.\footnote{A vase visualization tool has been produced by \patp{migrev-dolseg}, available at TODO}
+Vase mode provides something like a gradual (un)typing pipe\-line:  one proceeds from a static Hoon context, to a dynamic vase mode, to untyped Nock.  A vase algebra describes how to combine the type subject information and the associated value information, as in an import or a \textsc{repl}.  This lets Hoon have human-legible affordances in metaprogramming and validation, while retaining a simple target \textsc{isa} for execution, code proving, and optimized execution.
 
 \selectlanguage{USenglish}
 \printbibliography
