@@ -14,8 +14,8 @@
 \fancyhead{}
 \fancyfoot[L]{{\footnotesize
               %% We toggle between these:
-              Manuscript submitted for review.\\
-              % {\it Urbit Systems Technical Journal} I:1 (2024):  1–3. \\
+              % Manuscript submitted for review.\\
+              {\it Urbit Systems Technical Journal} II:1 (2025):  131–152. \\
               ~ \\
               Address author correspondence to \authorpatp.
               }}
@@ -42,7 +42,7 @@
 
 % We will adjust page numbering in final editing.
 \pagenumbering{arabic}
-\setcounter{page}{1}
+\setcounter{page}{131}
 
 \tableofcontents
 
@@ -481,7 +481,7 @@ A solid-state Nock runtime such as Arvo consists of an event loop over a list of
 
 A meta-vase is a \lstinline[style=inlinecode]{vase} of a \lstinline[style=inlinecode]{vase}, that is, an untyped \lstinline[style=inlinecode]{vase}.  These can be used to check structural data nesting without enforcing type, for instance.  (Urbit types used to be total; that is, on a mismatch they would return their default rather than crashing.)
 
-The vane interface is normally strictly typed, but using a metavase it can punch a hole through the \lstinline[style=inlinecode]{type} system. (This used to be the only way to do vase reduction before \lstinline[style=inlinecode]{!<} zapgal was introduced: a vane had to pass to the Arvo kernel to get into double vase mode, which Arvo would collapse into one vase mode and hand back.)
+The vane interface is normally strictly typed, but using a metavase it can punch a hole through the \lstinline[style=inlinecode]{type} system. (Before \lstinline[style=inlinecode]{!<} zapgal was introduced, vase reduction was mediated by a vane passing to the Arvo kernel to get into double vase mode, which Arvo would collapse into one vase mode and hand back.)
 
 Since Urbit is built to handle hot-swapped kernel updating, one interesting complication with vase handling lies in upgrades to the type system itself:
 
@@ -489,7 +489,8 @@ Since Urbit is built to handle hot-swapped kernel updating, one interesting comp
 Some subtleties regarding types arise when handling \textsc{ota} updates, since they can potentially alter the type system. Put more concretely, the type of type may be updated. In that case, the update is an untyped Nock formula from the perspective of the old kernel, but ordinary typed Hoon code from the perspective of the new kernel. Besides this one detail, the only functionality of the Arvo kernel proper that is untyped are its interactions with the Unix runtime.
 \end{quote}
 
-Urbit caches vases aggressively for performance and it is reasonable to expect that the NockApp framework will as well as it develops.
+\noindent
+A Nock runtime can cache known vases aggressively for performance improvement.
 
 \section{Beyond the Vase Algebra}
 
@@ -535,7 +536,8 @@ This is very similar to the way that Hoon lets you directly construct and manipu
 (eval '(+ 1 2))  ; => 3
 \end{lstlisting}
 
-This is basically equivalent to Hoon's \lstinline[style=inlinecode]{+ream}, although the Hoon \textsc{ast} is somewhat more regularized and opaque.  (I can actually do this without a text string, but the syntax is a bit convoluted and I don't want to muddy the waters any more in this short talk.)
+\noindent
+This is basically equivalent to Hoon's \lstinline[style=inlinecode]{+ream}, although the Hoon \textsc{ast} is somewhat more regularized and opaque.
 
 \begin{lstlisting}[style=listingcode]
 > (ream '(add 1 2)')
@@ -553,27 +555,26 @@ Vase mode is thus a “typed dynamic” system, unlike Lisp's raw dynamism.  (Wh
 
 \subsubsection{Haskell \texttt{Dynamic}}
 
-Haskellers probably immediately think of \lstinline[style=inlinecode]{Dynamic}.  It's true:  Hoon's vases are indeed similar to \href{https://hackage.haskell.org/package/base-4.21.0.0/docs/Data-Dynamic.html}{Haskell's \lstinline[style=inlinecode]{Dynamic}}, used for injecting values into a dynamically typed value.  Vases carry a subject, or a closure-like scope, not just an expression as data.
+Haskellers probably immediately think of \lstinline[style=inlinecode]{Dynamic}, which is used for injecting values into a dynamically typed value.  \lstinline[style=inlinecode]{Dynamic} lets you pack values of different types into a uniform container and defer type checking until runtime.  Like Hoon's vase mode, \lstinline[style=inlinecode]{Dynamic} lets you escape static typing temporarily and deferring type resolution.
+%Vases carry a subject, or a closure-like scope, not just an expression as data.
+Whereas in Hoon, a type–value mismatch is an “evil vase” and results in a runtime crash,\footnote{Since we are commonly running in an emulated mode, this doesn't take down the whole kernel.} \lstinline[style=inlinecode]{Dynamic} will result in \lstinline[style=inlinecode]{Nothing} if the types don't match.
 
-\begin{itemize}
-  \item  In Haskell, \lstinline[style=inlinecode]{Dynamic} lets you pack values of different types into a uniform container and defer type checking until runtime.  Like Hoon's vase mode, \lstinline[style=inlinecode]{Dynamic} lets you escape static typing temporarily and deferring type resolution.
-  \item  In Hoon, a type–value mismatch is an “evil vase” and results in a runtime crash.  (Since we are commonly running in an emulated mode, this doesn't take down the whole kernel.)  \lstinline[style=inlinecode]{Dynamic} will result in \lstinline[style=inlinecode]{Nothing} if the types don't match.
-  \item  Hoon's vases are much “closer to the metal”, since they can trivially result in Nock code.  In the end, Hoon's vase mode feels more like a dynamic interpreter or a VM operating against a dynamic subject, while \lstinline[style=inlinecode]{Dynamic} is more focused on typed payloads for data evaluation.
-  \item  \lstinline[style=inlinecode]{Dynamic} is data-centric, safe but limited.  Vases carry scope and enable \lstinline[style=inlinecode]{eval} but risk evil vase crashes, a trade-off for power.
-\end{itemize}
+Hoon's vases are in a sense much closer to the metal since they can trivially result in Nock code.  Vase mode feels more like a dynamic interpreter or a VM, while \lstinline[style=inlinecode]{Dynamic} is more focused on typed payloads for data evaluation.
+  % \item  \lstinline[style=inlinecode]{Dynamic} is data-centric, safe but limited.  Vases carry scope and enable \lstinline[style=inlinecode]{eval} but risk evil vase crashes, a trade-off for power.
+% \end{itemize}
 
 \subsubsection{Untyped Virtual Machines}
 
-There may even be reason to eschew vases altogether in some cases; Jock, for example, does not at the current time use vases except when interacting with Hoon via a foreign function interface.  \citeauthor{Chevalier2022} (\citeyear{Chevalier2022}) argued that untyped virtual machines are more resistant to bit rot than typed virtual machines:
+There may even be reason to eschew vases altogether in some cases; Jock does not currently use vases except when interacting with Hoon via a foreign function interface.  \citeauthor{Chevalier2022} (\citeyear{Chevalier2022}) argued that untyped virtual machines are more resistant to bit rot than typed virtual machines:
 
 \begin{quote}
-An untyped VM design can be much more minimalistic. It has to enforce a small set of hard constraints, such as making sure that pointer dereferences respect valid address bounds so that the running program can't crash the host VM, but it doesn't really need to care about the types of values or enforcing typing constraints. For performance, it can implement a very barebones \textsc{jit} compiler based on dynamic binary translation, but it doesn't have to care about optimizing type checks, and it can even allow the running program to manage its own memory and implement its own garbage collector.
+An untyped VM design \ldots{} has to enforce a small set of hard constraints, such as making sure that pointer dereferences respect valid address bounds so that the running program can't crash the host VM, but it doesn't really need to care about the types of values or enforcing typing constraints. For performance, it can implement a very barebones \textsc{jit} compiler based on dynamic binary translation, but it doesn't have to care about optimizing type checks, and it can even allow the running program to manage its own memory and implement its own garbage collector.
 
 \ldots{} [T]here's a strong case to be made that an untyped VM design can easily be much smaller and more minimalistic than a typed VM design. A simpler untyped VM has two major strengths. The first is that it doesn't place as many restrictions on running programs. Programs can implement their own control flow structures, their own GC, or even their own \textsc{jit}. The second is that a smaller, simpler VM is much easier to port, reimplement and maintain.  \citep{Chevalier2022}
 \end{quote}
 
 \noindent
-Nock runtimes do indeed hew to this parsimony, but vases are freqently used particularly in interprocess communication in today's Urbit kernelspace and userspace.  It is unclear how they could profitably be excised from the system given their global utility.
+Nock runtimes do indeed hew to this parsimony, but vases are used particularly in interprocess communication in today's Urbit kernel and userspace.  It is unclear how they could profitably be excised from the system given their global utility.
 
 A final interesting question is to think about targeting other \textsc{isa}s.  While Hoon itself is closely tied to Nock, no part of the vase algebra (in the abstract) is specific to Nock except its instantiation as nouns.
 
