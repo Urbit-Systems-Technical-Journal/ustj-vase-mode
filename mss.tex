@@ -1,6 +1,7 @@
 \documentclass[twoside]{article}
 
 \usepackage{ustj}
+\renewcommand{\headrulewidth}{0pt}
 
 \addbibresource{mss.bib}
 
@@ -22,9 +23,9 @@
 }
 %  Arrange subsequent pages:
 \fancyhf{}
-\fancyhead[LE]{{\urbitfont Urbit Systems Technical Journal}}
-\fancyhead[RO]{Notes on Vases}
-\fancyfoot[LE,RO]{\thepage}
+% \fancyhead[LE]{{\urbitfont Urbit Systems Technical Journal}}
+% \fancyhead[RO]{Notes on Vases}
+% \fancyfoot[LE,RO]{\thepage}
 
 %%MANUSCRIPT
 \title{Notes on Vases}
@@ -48,6 +49,7 @@
 
 \section{Introduction}
 
+\sloppy
 Nock is homoiconic and only recognizes natural numbers, ``atoms'' (nonnegative integers, $\mathbb{Z}^{*}$) and pairs (``cells'') as values. Although Nock is untyped, it is desirable to build typed languages targeting this instruction set architecture.
 
 The Hoon programming language solves this by using a pair of a type description and a noun, or raw Nock value.  In some ways like a macro over Nock, Hoon introduces static typing (thus extending from Nock's exclusive use of natural numbers) and other design patterns convenient to programmers.\footnote{The Jock language does not directly expose vases for utilization, but does utilize them inside the compiler, written in Hoon.}  Most of the time, developers work in “static Hoon”, which maintains guard rails and is easier to reason about.  However, a more flexible and powerful modality is available.  The type description, or type of the subject, contains information like variable names, variable types, aliases, and the overall structure of the execution environment.  Essentially, it acts as a strictly defined metadata reference set for the associated Nock value and its execution environment.  We call such a pair of type and value a “vase”.\footnote{Different interpreters and compilers call this pair different things.  For instance, CPython calls this a “boxed value” and keeps the value as a pair of datum and type tag.}  Most commonly used in building code and in manipulating vanes, vases permit the developer to edit the type and the value directly.  Essentially, a value can be lifted from a static Hoon context into a dynamic vase context, then reduced back to static Hoon or untyped Nock.
@@ -99,10 +101,12 @@ A Hoon \textsc{ast} is properly a \lstinline[style=inlinecode]{$hoon}, which is 
 
 \begin{lstlisting}[style=listingblock]
 > (ream '~[1 2 3]')
-[%clsg p=~[[%sand p=%ud q=1] [%sand p=%ud q=2] [%sand p=%ud q=3]]]
+[%clsg p=~[[%sand p=%ud q=1] [%sand p=%ud q=2]
+  [%sand p=%ud q=3]]]
 
 > (ream '[1 2 3 ~]')
-[%cltr p=~[[%sand p=%ud q=1] [%sand p=%ud q=2] [%sand p=%ud q=3] [%bust p=%null]]]
+[%cltr p=~[[%sand p=%ud q=1] [%sand p=%ud q=2]
+  [%sand p=%ud q=3] [%bust p=%null]]]
 \end{lstlisting}
 
 \noindent
@@ -185,7 +189,7 @@ The other types are more complex:
   \item  \lstinline[style=inlinecode]{%core} is the descriptor type for a core.  Besides the \lstinline[style=inlinecode]{$type}, it uses a \lstinline[style=inlinecode]{$coil}, which is a tuple of variance information, context, and chapters (limbs).
   \item  \lstinline[style=inlinecode]{%face} spans the same set as nouns but includes a face.
   \item  \lstinline[style=inlinecode]{%fork} is a union, or choice over options.
-  \item  \lstinline[style=inlinecode]{%hint} is an annotation for the compiler (Nock Eleven).
+  \item  \lstinline[style=inlinecode]{%hint} is an annotation for the compiler (Nock opcode 11).
   \item  \lstinline[style=inlinecode]{%hold} types are lazily evaluated, such as a recursive type (like the \lstinline[style=inlinecode]{+list} mold builder).
   \begin{itemize}
     \item  \lstinline[style=inlinecode]{%hold} types are why the compiler can have trouble with lists at runtime, such as needing to distinguish a \lstinline[style=inlinecode]{lest} or the \textsc{tmi} problem with \lstinline[style=inlinecode]{+snag} \&c.
@@ -494,7 +498,7 @@ A Nock runtime can cache known vases aggressively for performance improvement.
 
 \section{Beyond the Vase Algebra}
 
-Hoon used to directly expose many of the mechanics of this when file handles could be produced using a sophisticated but complicated build system.  (See the Ford vane, ca. 2016–2019).  While Hoon still uses vase mode explicitly to import libraries and deliver user agent pokes, these are the only places that a userspace developer would typically encounter them.  The vase algebra has largely been restricted to the compiler level in contemporary practice.
+Hoon used to directly expose many of the mechanics of this when file handles could be produced using a sophisticated but complicated build system.\footnote{To wit, the history of the Ford vane, ca. 2016–2019.}  While Hoon still uses vase mode explicitly to import libraries and deliver user agent pokes, these are the only places that a userspace developer would typically encounter them.  The vase algebra has largely been restricted to the compiler level in contemporary practice.
 
 \subsection{Comparisons}
 
