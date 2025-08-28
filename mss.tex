@@ -50,7 +50,7 @@
 \section{Introduction}
 
 \sloppy
-Nock is homoiconic and only recognizes natural numbers, ``atoms'' (nonnegative integers, $\mathbb{Z}^{*}$) and pairs (``cells'') as values. Although Nock is untyped, it is desirable to build typed languages targeting this instruction set architecture.
+Nock is homoiconic and only recognizes natural numbers or ``atoms'' (nonnegative integers, $\mathbb{Z}^{*}$) and pairs or``cells'', as values. Although Nock is untyped, it is desirable to build typed languages targeting this instruction set architecture.
 
 The Hoon programming language solves this by using a pair of a type description and a noun, or raw Nock value.  In some ways like a macro over Nock, Hoon introduces static typing (thus extending from Nock's exclusive use of natural numbers) and other design patterns convenient to programmers.\footnote{The Jock language does not directly expose vases for utilization, but does utilize them inside the compiler, written in Hoon.}  Most of the time, developers work in “static Hoon”, which maintains guard rails and is easier to reason about.  However, a more flexible and powerful modality is available.  The type description, or type of the subject, contains information like variable names, variable types, aliases, and the overall structure of the execution environment.  Essentially, it acts as a strictly defined metadata reference set for the associated Nock value and its execution environment.  We call such a pair of type and value a “vase”.\footnote{Different interpreters and compilers call this pair different things.  For instance, CPython calls this a “boxed value” and keeps the value as a pair of datum and type tag.}  Most commonly used in building code and in manipulating vanes, vases permit the developer to edit the type and the value directly.  Essentially, a value can be lifted from a static Hoon context into a dynamic vase context, then reduced back to static Hoon or untyped Nock.
 
@@ -151,6 +151,7 @@ What vases permit over raw Nock manipulations therefore includes:
   \item  building and running system upgrades while running live (i.e. hotswapping code)
 \end{enumerate}
 
+\noindent
 Urbit's application architecture has a persistent solid-state kernel which runs user applications in a sort of sandbox.  They cannot use vase mode directly, but they are built and modified using vase mode.  In particular, library imports and the \textsc{repl} interface both use vase mode extensively.
 
 Likewise, NockApp supplies a kernel wrapping specialized I/O drivers for the executable Nock, produced by Hoon or Jock.  Vases are generally used for building code sent as nouns over the wire and in the compilers.
@@ -272,13 +273,15 @@ We have to be able to envase and devase a value, which we will write Lisp-style.
 A vase is a pair of type and data, particularly as used in Nock and related languages.  Vase mode, therefore, describes working with such pairs rather than first-order typed data.  The vase algebra allows types to be straightforwardly combined, permitting code evaluation, facilitating metacircular interpretation, managing persistent code artifacts, and otherwise working at a higher level of abstraction than raw typed code and data.  In this talk, we will examine the role of vases, the vase algebra, and work through several examples of how and why vase mode is useful throughout Nock-based platforms.
 \end{quote}
 
-We will employ two main tools in Hoon to envase (or make dynamic) and devase (or make static):
+\noindent
+We employ two main tools in Hoon to envase (or make dynamic) and devase (or make static):
 
 \begin{itemize}
-  \item  \lstinline[style=inlinecode]{!>} zapgar envases, or produces a vase from a noun.
-  \item  \lstinline[style=inlinecode]{!<} zapgal devases, or produces a statically-typed value from a vase.
+  \item  \lstinline[style=inlinecode]{!>} zapgar envases, producing a vase from a noun.
+  \item  \lstinline[style=inlinecode]{!<} zapgal devases, producing a noun from a vase.
 \end{itemize}
 
+\noindent
 There is also a “typed quote” \lstinline[style=inlinecode]{!;} zapmic rune, which wraps the product of its second child as the type of the example given as the first child.  This is not commonly used.
 
 \begin{lstlisting}[style=listingcode]
@@ -288,9 +291,7 @@ There is also a “typed quote” \lstinline[style=inlinecode]{!;} zapmic rune, 
 
 \subsection{Eliminating Vases}
 
-\lstinline[style=inlinecode]{!<} zapgal devases, which requires you to know what type you expect so that you can match them.
-
-The second process is less common; while you can trivially ascend from a statically-typed environment to a dynamically-typed one, to enter Hoon's static layer again is more difficult and you have to know exactly what the type of the result is beforehand.  (If the value does not actually fit the type it claims, we say that it is an “evil vase“ and cannot process it.)  Normally, once you have a vase in the code builder, you will use the vase algebra which we will discuss in a moment to produce static untyped Nock code instead of static Hoon code.
+\lstinline[style=inlinecode]{!<} zapgal devases, which requires you to know what type you expect so that you can match them.  This process is less common; while you can trivially ascend from a statically-typed environment to a dynamically-typed one, to enter Hoon's static layer again is more difficult and you have to know exactly what the type of the result is beforehand.  (If the value does not fit the type it claims, we say that it is an “evil vase“ and cannot process it.)  Normally, once you have a vase in the code builder, you will use the vase algebra which we will discuss in a moment to produce static untyped Nock code instead of static Hoon code.
 
 (A quick review of the Urbit kernel code base suggests that most instances of \lstinline[style=inlinecode]{!<} zapgal unsafe vase elimination are either unpacking command-line arguments which have in principle been vetted by the runtime first, or handling a received value over the network, presumably from its remote counterpart.)
 
@@ -371,7 +372,7 @@ With that, we can resolve a variable name (or “face”) against a vase:
 [#t/[@ud @ud] q=[42 42]]
 \end{lstlisting}
 
-A much more interesting case arises when we introduce functions to the mix.  Since we always need to know about a function to evaluate it, we will henceforth \lstinline[style=inlinecode]{+slop} in the Hoon subject including its standard library as \lstinline[style=inlinecode]{.}.  Furthermore, if we don't have variable names in this example, we can refer to the values by their binary tree addresses, in this case the head of the tail and the tail of the tail.
+A much more interesting case arises when we introduce functions to the mix.  Since we always need to know about a function to evaluate it, we will henceforth \lstinline[style=inlinecode]{+slop} in the Hoon subject including its standard library as \lstinline[style=inlinecode]{.} dot.  Furthermore, if we don't have variable names in this example, we can refer to the values by their binary tree addresses, in this case the head of the tail and the tail of the tail.
 
 \begin{lstlisting}[style=listingcode]
 > (slap (slop !>([a=1 b=2]) !>(.)) (ream '(add a b)'))
